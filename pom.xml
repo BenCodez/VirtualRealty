@@ -141,7 +141,7 @@
         <dependency>
             <groupId>eu.okaeri</groupId>
             <artifactId>okaeri-configs-yaml-bukkit</artifactId>
-            <version>4.0.6</version>
+            <version>5.0.5</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
