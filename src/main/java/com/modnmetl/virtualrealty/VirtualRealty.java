@@ -141,6 +141,7 @@ public final class VirtualRealty extends JavaPlugin {
 		registerListeners();
 		registerPlaceholders();
 		debug("Server version: " + this.getServer().getBukkitVersion() + " | " + this.getServer().getVersion());
+		getLogger().info("Virtual Realty has been enabled!");
 	}
 
 	@Override
