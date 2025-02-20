@@ -48,7 +48,6 @@ import org.bukkit.permissions.Permission;
 import com.modnmetl.virtualrealty.VirtualRealty;
 import com.modnmetl.virtualrealty.listener.VirtualListener;
 import com.modnmetl.virtualrealty.manager.PlotManager;
-import com.modnmetl.virtualrealty.model.material.DoorMaterial;
 import com.modnmetl.virtualrealty.model.material.InteractMaterial;
 import com.modnmetl.virtualrealty.model.material.StorageMaterial;
 import com.modnmetl.virtualrealty.model.material.SwitchMaterial;
@@ -63,7 +62,37 @@ public class PlotProtectionListener extends VirtualListener {
 	public static final LinkedList<Material> INTERACT = new LinkedList<>();
 	public static final LinkedList<Material> SWITCHES = new LinkedList<>();
 	public static final LinkedList<Material> STORAGES = new LinkedList<>();
-	public static final LinkedList<Material> DOORS = new LinkedList<>();
+
+	public boolean isDoor(Material type) {
+		if (type.name().endsWith("DOOR"))
+			return true;
+		return false;
+	}
+
+	public boolean isInteractable(Material type) {
+		if (INTERACT.contains(type)) {
+			return true;
+		}
+
+		if (type.name().endsWith("PRESSURE_PLATE")) {
+			return true;
+		}
+
+		if (type.name().endsWith("BUTTON")) {
+			return true;
+		}
+
+		if (type.name().endsWith("FENCE_GATE")) {
+			return true;
+		}
+
+		if (type.name().endsWith("TRAPDOOR")) {
+			return true;
+		}
+
+		return false;
+
+	}
 
 	static {
 		for (InteractMaterial value : InteractMaterial.values()) {
@@ -80,11 +109,6 @@ public class PlotProtectionListener extends VirtualListener {
 			Material material = Material.getMaterial(value.toString());
 			if (Objects.nonNull(material))
 				STORAGES.add(material);
-		}
-		for (DoorMaterial value : DoorMaterial.values()) {
-			Material material = Material.getMaterial(value.toString());
-			if (Objects.nonNull(material))
-				DOORS.add(material);
 		}
 	}
 
@@ -160,8 +184,8 @@ public class PlotProtectionListener extends VirtualListener {
 			return;
 		if (player.isSneaking() && e.isBlockInHand())
 			return;
-		if (!(INTERACT.contains(e.getClickedBlock().getType()) || SWITCHES.contains(e.getClickedBlock().getType())
-				|| DOORS.contains(e.getClickedBlock().getType())
+		if (!(isInteractable(e.getClickedBlock().getType()) || SWITCHES.contains(e.getClickedBlock().getType())
+				|| isDoor(e.getClickedBlock().getType())
 				|| e.getClickedBlock().getType().name().endsWith("PRESSURE_PLATE")))
 			return;
 
@@ -195,14 +219,14 @@ public class PlotProtectionListener extends VirtualListener {
 				}
 				return;
 			}
-			if (INTERACT.contains(e.getClickedBlock().getType())) {
+			if (isInteractable(e.getClickedBlock().getType())) {
 				if (!plotMember.hasPermission(RegionPermission.ITEM_USE)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
 					return;
 				}
 			}
-			if (DOORS.contains(e.getClickedBlock().getType())) {
+			if (isDoor(e.getClickedBlock().getType())) {
 				if (!plotMember.hasPermission(RegionPermission.DOORS)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
@@ -218,14 +242,14 @@ public class PlotProtectionListener extends VirtualListener {
 				}
 				return;
 			}
-			if (INTERACT.contains(e.getClickedBlock().getType())) {
+			if (isInteractable(e.getClickedBlock().getType())) {
 				if (!plot.hasPermission(RegionPermission.ITEM_USE)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
 					return;
 				}
 			}
-			if (DOORS.contains(e.getClickedBlock().getType())) {
+			if (isDoor(e.getClickedBlock().getType())) {
 				if (!plot.hasPermission(RegionPermission.DOORS)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);

@@ -192,12 +192,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>de.bluecolored</groupId>
-            <artifactId>bluemap-api</artifactId>
-            <version>2.7.3</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
             <version>2.11.6</version>
