@@ -176,7 +176,7 @@
         <dependency>
             <groupId>eu.okaeri</groupId>
             <artifactId>okaeri-configs-validator-okaeri</artifactId>
-            <version>5.0.5</version>
+            <version>5.0.9</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
