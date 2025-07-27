@@ -29,6 +29,7 @@ import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -952,6 +953,18 @@ public class PlotProtectionListener extends VirtualListener {
 			e.setCancelled(true);
 		}
 
+	}
+
+	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+	public void onEndermanChangeBlock(EntityChangeBlockEvent e) {
+		if (e.getEntityType() == EntityType.ENDERMAN) {
+			Plot plot = PlotManager.getInstance().getPlot(e.getBlock().getLocation());
+			if (plot == null) {
+				return;
+			} else {
+				e.setCancelled(true);
+			}
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
