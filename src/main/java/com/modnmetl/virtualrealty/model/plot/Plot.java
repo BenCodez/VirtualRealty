@@ -191,7 +191,7 @@ public final class Plot {
 
 	public boolean hasMembershipAccess(UUID uuid) {
 		PlotMember member = getMember(uuid);
-		return member != null || (ownedBy != null && getPlotOwner().getUniqueId() == uuid);
+		return member != null || (ownedBy != null && getPlotOwner().getUniqueId().equals(uuid));
 	}
 
 	public void togglePermission(RegionPermission plotPermission) {

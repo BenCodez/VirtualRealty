@@ -31,6 +31,12 @@ public class WorldProtectionListener extends VirtualListener {
 		super(plugin);
 	}
 
+	public boolean isDoor(Material type) {
+		if (type.name().endsWith("DOOR"))
+			return true;
+		return false;
+	}
+
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onBlockInteract(PlayerInteractEvent e) {
 		if (e.isCancelled())
@@ -45,7 +51,8 @@ public class WorldProtectionListener extends VirtualListener {
 		if (player.isSneaking() && e.isBlockInHand())
 			return;
 		if (!(PlotProtectionListener.INTERACT.contains(e.getClickedBlock().getType())
-				|| PlotProtectionListener.SWITCHES.contains(e.getClickedBlock().getType())))
+				|| PlotProtectionListener.SWITCHES.contains(e.getClickedBlock().getType())
+				|| isDoor(e.getClickedBlock().getType())))
 			return;
 
 		if (e.getHand() == EquipmentSlot.OFF_HAND)
@@ -73,6 +80,15 @@ public class WorldProtectionListener extends VirtualListener {
 				Class.forName("com.modnmetl.virtualrealty.premiumloader.PremiumLoader", false,
 						VirtualRealty.getLoader());
 				if (!WorldUtil.hasPermission(RegionPermission.ITEM_USE)) {
+					e.setCancelled(true);
+					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
+				}
+				return;
+			}
+			if (isDoor(e.getClickedBlock().getType())) {
+				Class.forName("com.modnmetl.virtualrealty.premiumloader.PremiumLoader", false,
+						VirtualRealty.getLoader());
+				if (!WorldUtil.hasPermission(RegionPermission.DOORS)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
 				}
