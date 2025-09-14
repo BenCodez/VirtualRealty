@@ -26,7 +26,7 @@ public class PluginConfiguration extends OkaeriConfig {
 	public String initServerVersion = ServerVersion.MODERN.toString();
 
 	@Comment("Debug mode (Displays more detailed info about plugin executions)")
-	public boolean debugMode = false;
+	public boolean debugMode = true;
 
 	@Comment("Local loader mode (for devs)")
 	public boolean loaderDebugMode = false;
@@ -102,6 +102,16 @@ public class PluginConfiguration extends OkaeriConfig {
 	@CustomKey("dynmap-markers")
 	public MarkerColor dynmapMarkersColor = new MarkerColor();
 
+	@Comment("Enables pl3xmap plots highlighting")
+	@CustomKey("enable-pl3xmap-markers")
+	public boolean pl3xmapMarkers = true;
+
+	@Comment("Choose which type of plots should be highlighted on Pl3xMap page | Choose from: { ALL, AVAILABLE, OWNED }")
+	public HighlightType pl3xmapType = HighlightType.ALL;
+
+	@CustomKey("pl3xmap-markers")
+	public Pl3xMapMarkerColor pl3xmapMarkersColor = new Pl3xMapMarkerColor();
+
 	@Names(strategy = NameStrategy.IDENTITY)
 	public static class MarkerColor extends OkaeriConfig {
 
@@ -129,6 +139,30 @@ public class PluginConfiguration extends OkaeriConfig {
 			public int getHexColor() {
 				return Integer.decode("0x" + color.replaceAll("#", ""));
 			}
+
+		}
+
+	}
+
+	@Names(strategy = NameStrategy.IDENTITY)
+	public static class Pl3xMapMarkerColor extends OkaeriConfig {
+
+		public Pl3xMapAvailable available = new Pl3xMapAvailable();
+		public Pl3xMapOwned owned = new Pl3xMapOwned();
+
+		@Names(strategy = NameStrategy.IDENTITY)
+		public static class Pl3xMapAvailable extends OkaeriConfig {
+
+			public String color = "#80eb34";
+			public double opacity = 0.3;
+
+		}
+
+		@Names(strategy = NameStrategy.IDENTITY)
+		public static class Pl3xMapOwned extends OkaeriConfig {
+
+			public String color = "#ffbf00";
+			public double opacity = 0.45;
 
 		}
 
