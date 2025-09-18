@@ -65,10 +65,9 @@ public class PlotProtectionListener extends VirtualListener {
 	public static final LinkedList<Material> STORAGES = new LinkedList<>();
 
     public boolean isDoor(Material type) {
-        // Treat regular doors and dripleaves as "doors" for permission purposes
+        // Only treat actual doors as "doors" for permission purposes
+        // Dripleaf is now handled separately to allow tilting without door permissions
         if (type.name().endsWith("DOOR"))
-            return true;
-        if (isDripleaf(type))
             return true;
         return false;
     }
@@ -243,7 +242,15 @@ public class PlotProtectionListener extends VirtualListener {
 					return;
 				}
 			}
+			// Allow dripleaf interactions (tilting) without permission checks for members
+			if (isDripleaf(e.getClickedBlock().getType())) {
+				return; // Allow all dripleaf interactions for members
+			}
 		} else {
+			// Allow dripleaf interactions (tilting) without permission checks for non-members too
+			if (isDripleaf(e.getClickedBlock().getType())) {
+				return; // Allow all dripleaf interactions for non-members
+			}
 			if (isModernSwitch || isLegacySwitch || e.getClickedBlock().getType().name().endsWith("PRESSURE_PLATE")) {
 				if (!plot.hasPermission(RegionPermission.SWITCH)) {
 					e.setCancelled(true);
@@ -494,9 +501,8 @@ public class PlotProtectionListener extends VirtualListener {
 		if (hasPermission(player, PLOT_BUILD))
 			return;
 
-		// Check if the block being broken is a dripleaf (should use door permissions)
-		boolean isDripleafBlock = isDripleaf(e.getBlock().getType());
-
+		// For dripleaf blocks, always require BREAK permission for actual breaking
+		// State changes (tilting) are handled in the EntityChangeBlockEvent handler
 		if (plot.hasMembershipAccess(player.getUniqueId())) {
 			PlotMember plotMember = plot.getMember(player.getUniqueId());
 			if (plot.isOwnershipExpired()) {
@@ -506,35 +512,33 @@ public class PlotProtectionListener extends VirtualListener {
 			}
 			if (plotMember == null)
 				return;
-
-			if (isDripleafBlock) {
-				// Use door permissions for dripleaves
-				if (!plotMember.hasPermission(RegionPermission.DOORS)) {
-					e.setCancelled(true);
-					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
-				}
-			} else {
-				// Use break permissions for regular blocks
-				if (!plotMember.hasPermission(RegionPermission.BREAK)) {
-					e.setCancelled(true);
-					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantBuildHere);
-				}
+			if (!plotMember.hasPermission(RegionPermission.BREAK)) {
+				e.setCancelled(true);
+				player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantBuildHere);
 			}
 		} else {
-			if (isDripleafBlock) {
-				// Use door permissions for dripleaves
-				if (!plot.hasPermission(RegionPermission.DOORS)) {
-					e.setCancelled(true);
-					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
-				}
-			} else {
-				// Use break permissions for regular blocks
-				if (!plot.hasPermission(RegionPermission.BREAK)) {
-					e.setCancelled(true);
-					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantBuildHere);
-				}
+			if (!plot.hasPermission(RegionPermission.BREAK)) {
+				e.setCancelled(true);
+				player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantBuildHere);
 			}
 		}
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void onDripleafStateChange(EntityChangeBlockEvent e) {
+		if (e.isCancelled())
+			return;
+		
+		// Only handle dripleaf tilting (state changes, not breaking)
+		if (!isDripleaf(e.getBlock().getType()))
+			return;
+		
+		// If the dripleaf is being broken (set to AIR), let the BlockBreakEvent handle it
+		if (e.getTo() == Material.AIR)
+			return;
+		
+		// This is a state change (tilting), allow it without requiring BREAK permission
+		// No permission check needed for dripleaf tilting
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
