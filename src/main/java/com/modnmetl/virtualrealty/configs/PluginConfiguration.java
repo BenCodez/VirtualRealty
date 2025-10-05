@@ -26,7 +26,7 @@ public class PluginConfiguration extends OkaeriConfig {
 	public String initServerVersion = ServerVersion.MODERN.toString();
 
 	@Comment("Debug mode (Displays more detailed info about plugin executions)")
-	public boolean debugMode = true;
+	public boolean debugMode = false;
 
 	@Comment("Local loader mode (for devs)")
 	public boolean loaderDebugMode = false;
