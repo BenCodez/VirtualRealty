@@ -64,11 +64,18 @@ public class PlotProtectionListener extends VirtualListener {
 	public static final LinkedList<Material> SWITCHES = new LinkedList<>();
 	public static final LinkedList<Material> STORAGES = new LinkedList<>();
 
-	public boolean isDoor(Material type) {
-		if (type.name().endsWith("DOOR"))
-			return true;
-		return false;
-	}
+    public boolean isDoor(Material type) {
+        // Only treat actual doors as "doors" for permission purposes
+        // Dripleaf is now handled separately to allow tilting without door permissions
+        if (type.name().endsWith("DOOR"))
+            return true;
+        return false;
+    }
+
+    private boolean isDripleaf(Material type) {
+        String name = type.name();
+        return name.contains("DRIPLEAF");
+    }
 
 	public boolean isInteractable(Material type) {
 		if (INTERACT.contains(type)) {
@@ -192,9 +199,10 @@ public class PlotProtectionListener extends VirtualListener {
 
 		if (e.getHand() == EquipmentSlot.OFF_HAND)
 			return;
-		if (!e.getClickedBlock().getType().isInteractable()
-				&& !(e.getClickedBlock().getType().name().endsWith("PRESSURE_PLATE")))
-			return;
+        if (!e.getClickedBlock().getType().isInteractable()
+                && !(e.getClickedBlock().getType().name().endsWith("PRESSURE_PLATE"))
+                && !isDripleaf(e.getClickedBlock().getType()))
+            return;
 
 		Plot plot = PlotManager.getInstance().getPlot(e.getClickedBlock().getLocation());
 		if (plot == null)
@@ -234,7 +242,15 @@ public class PlotProtectionListener extends VirtualListener {
 					return;
 				}
 			}
+			// Allow dripleaf interactions (tilting) without permission checks for members
+			if (isDripleaf(e.getClickedBlock().getType())) {
+				return; // Allow all dripleaf interactions for members
+			}
 		} else {
+			// Allow dripleaf interactions (tilting) without permission checks for non-members too
+			if (isDripleaf(e.getClickedBlock().getType())) {
+				return; // Allow all dripleaf interactions for non-members
+			}
 			if (isModernSwitch || isLegacySwitch || e.getClickedBlock().getType().name().endsWith("PRESSURE_PLATE")) {
 				if (!plot.hasPermission(RegionPermission.SWITCH)) {
 					e.setCancelled(true);
@@ -484,6 +500,9 @@ public class PlotProtectionListener extends VirtualListener {
 			return;
 		if (hasPermission(player, PLOT_BUILD))
 			return;
+
+		// For dripleaf blocks, always require BREAK permission for actual breaking
+		// State changes (tilting) are handled in the EntityChangeBlockEvent handler
 		if (plot.hasMembershipAccess(player.getUniqueId())) {
 			PlotMember plotMember = plot.getMember(player.getUniqueId());
 			if (plot.isOwnershipExpired()) {
@@ -503,6 +522,23 @@ public class PlotProtectionListener extends VirtualListener {
 				player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantBuildHere);
 			}
 		}
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void onDripleafStateChange(EntityChangeBlockEvent e) {
+		if (e.isCancelled())
+			return;
+		
+		// Only handle dripleaf tilting (state changes, not breaking)
+		if (!isDripleaf(e.getBlock().getType()))
+			return;
+		
+		// If the dripleaf is being broken (set to AIR), let the BlockBreakEvent handle it
+		if (e.getTo() == Material.AIR)
+			return;
+		
+		// This is a state change (tilting), allow it without requiring BREAK permission
+		// No permission check needed for dripleaf tilting
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -957,13 +993,24 @@ public class PlotProtectionListener extends VirtualListener {
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 	public void onEndermanChangeBlock(EntityChangeBlockEvent e) {
+		Plot plot = PlotManager.getInstance().getPlot(e.getBlock().getLocation());
+		if (plot == null) {
+			return;
+		}
+
+		// Protect against Enderman block changes
 		if (e.getEntityType() == EntityType.ENDERMAN) {
-			Plot plot = PlotManager.getInstance().getPlot(e.getBlock().getLocation());
-			if (plot == null) {
-				return;
-			} else {
+			e.setCancelled(true);
+			return;
+		}
+
+		// Protect dripleaves from breaking while allowing tilting/interaction
+		if (isDripleaf(e.getBlock().getType())) {
+			// Check if this is a dripleaf breaking (changing to air or different block)
+			if (e.getTo() == Material.AIR || !isDripleaf(e.getTo())) {
 				e.setCancelled(true);
 			}
+			// Allow dripleaf state changes (tilting) by not cancelling other dripleaf-to-dripleaf changes
 		}
 	}
 

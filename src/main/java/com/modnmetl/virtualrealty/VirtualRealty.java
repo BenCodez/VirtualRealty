@@ -46,6 +46,7 @@ import com.modnmetl.virtualrealty.listener.stake.DraftListener;
 import com.modnmetl.virtualrealty.manager.DynmapManager;
 import com.modnmetl.virtualrealty.manager.MetricsManager;
 import com.modnmetl.virtualrealty.manager.PlotManager;
+import com.modnmetl.virtualrealty.manager.Pl3xMapManager;
 import com.modnmetl.virtualrealty.model.other.ServerVersion;
 import com.modnmetl.virtualrealty.model.plot.Plot;
 import com.modnmetl.virtualrealty.model.plot.PlotSize;
@@ -64,6 +65,7 @@ public final class VirtualRealty extends JavaPlugin {
 	// CORE
 	public List<JarFile> jarFiles = new ArrayList<>();
 	public DynmapManager dynmapManager;
+	public Pl3xMapManager pl3xMapManager;
 	public Locale locale;
 	@Getter
 	private static VirtualRealty instance;
@@ -135,6 +137,7 @@ public final class VirtualRealty extends JavaPlugin {
 		}
 		loadPlotsData();
 		loadDynMapHook();
+		loadPl3xMapHook();
 		registerCommands();
 		loadCommandsConfiguration();
 		updateCommandsConfig();
@@ -296,6 +299,13 @@ public final class VirtualRealty extends JavaPlugin {
 		}
 	}
 
+	public void loadPl3xMapHook() {
+		if (getPluginConfiguration().pl3xmapMarkers) {
+			pl3xMapManager = new Pl3xMapManager(this);
+			pl3xMapManager.registerPl3xMap();
+		}
+	}
+
 	public void loadMetrics() {
 		metricsManager = new MetricsManager(this, 14066);
 		metricsManager.registerMetrics();
@@ -452,6 +462,10 @@ public final class VirtualRealty extends JavaPlugin {
 
 	public static DynmapManager getDynmapManager() {
 		return getInstance().dynmapManager;
+	}
+
+	public static Pl3xMapManager getPl3xMapManager() {
+		return getInstance().pl3xMapManager;
 	}
 
 	public static Database getDatabase() {

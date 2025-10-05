@@ -227,7 +227,7 @@ public class PanelListener extends VirtualListener {
                     OfflinePlayer offlinePlayer = PanelUtil.SELECTED_MEMBER.get(player.getUniqueId());
                     PlotMember plotMember = plot.getMember(offlinePlayer.getUniqueId());
                     ManagementPermission managementPermission = ManagementPermission.getPermission(e.getSlot() - 12);
-                    if (plot.getPlotOwner().getUniqueId() != player.getUniqueId()) {
+                    if (!plot.getPlotOwner().getUniqueId().equals(player.getUniqueId())) {
                         ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(player);
                         return;
                     }
