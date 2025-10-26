@@ -68,8 +68,6 @@ public class WorldProtectionListener extends VirtualListener {
 		try {
 			if ((e.getClickedBlock().getBlockData() instanceof Switch)
 					|| PlotProtectionListener.SWITCHES.contains(e.getClickedBlock().getType())) {
-				Class.forName("com.modnmetl.virtualrealty.premiumloader.PremiumLoader", false,
-						VirtualRealty.getLoader());
 				if (!WorldUtil.hasPermission(RegionPermission.SWITCH)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
@@ -77,8 +75,6 @@ public class WorldProtectionListener extends VirtualListener {
 				return;
 			}
 			if (PlotProtectionListener.INTERACT.contains(e.getClickedBlock().getType())) {
-				Class.forName("com.modnmetl.virtualrealty.premiumloader.PremiumLoader", false,
-						VirtualRealty.getLoader());
 				if (!WorldUtil.hasPermission(RegionPermission.ITEM_USE)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
@@ -86,8 +82,6 @@ public class WorldProtectionListener extends VirtualListener {
 				return;
 			}
 			if (isDoor(e.getClickedBlock().getType())) {
-				Class.forName("com.modnmetl.virtualrealty.premiumloader.PremiumLoader", false,
-						VirtualRealty.getLoader());
 				if (!WorldUtil.hasPermission(RegionPermission.DOORS)) {
 					e.setCancelled(true);
 					player.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().cantInteract);
