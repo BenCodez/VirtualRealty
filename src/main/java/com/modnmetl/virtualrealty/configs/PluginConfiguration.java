@@ -104,7 +104,7 @@ public class PluginConfiguration extends OkaeriConfig {
 
 	@Comment("Enables pl3xmap plots highlighting")
 	@CustomKey("enable-pl3xmap-markers")
-	public boolean pl3xmapMarkers = true;
+	public boolean pl3xmapMarkers = false;
 
 	@Comment("Choose which type of plots should be highlighted on Pl3xMap page | Choose from: { ALL, AVAILABLE, OWNED }")
 	public HighlightType pl3xmapType = HighlightType.ALL;
