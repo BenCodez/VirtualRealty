@@ -19,93 +19,132 @@ import com.modnmetl.virtualrealty.model.other.CommandType;
 import com.modnmetl.virtualrealty.model.permission.ManagementPermission;
 import com.modnmetl.virtualrealty.model.plot.Plot;
 import com.modnmetl.virtualrealty.model.plot.PlotMember;
+import com.modnmetl.virtualrealty.util.PlayerLookupUtil;
 
 public class AddSubCommand extends SubCommand {
 
-	public static LinkedList<String> HELP = new LinkedList<>();
+    public static LinkedList<String> HELP = new LinkedList<>();
 
-	static {
-		HELP.add(" ");
-		HELP.add(" §8§l«§8§m                    §8[§aVirtualRealty§8]§m                    §8§l»");
-		HELP.add(" §a/plot %command% §8<§7plot§8> §8<§7player§8>");
-	}
+    static {
+        HELP.add(" ");
+        HELP.add(" §8§l«§8§m                    §8[§aVirtualRealty§8]§m                    §8§l»");
+        HELP.add(" §a/plot %command% §8<§7plot§8> §8<§7player§8>");
+    }
 
-	public AddSubCommand() {
-	}
+    public AddSubCommand() {}
 
-	public AddSubCommand(CommandSender sender, Command command, String label, String[] args)
-			throws FailedCommandException {
-		super(sender, command, label, args, false, HELP);
-	}
+    public AddSubCommand(CommandSender sender, Command command, String label, String[] args)
+            throws FailedCommandException {
+        super(sender, command, label, args, false, HELP);
+    }
 
-	@Override
-	public void exec(CommandSender sender, Command command, String label, String[] args) throws FailedCommandException {
-		assertPlayer();
-		Player player = ((Player) sender);
-		if (args.length < 3) {
-			printHelp(CommandType.PLOT);
-			return;
-		}
-		int plotID;
-		try {
-			plotID = Integer.parseInt(args[1]);
-		} catch (IllegalArgumentException e) {
-			ChatMessage.of(VirtualRealty.getMessages().useNaturalNumbersOnly).sendWithPrefix(player);
-			return;
-		}
+    @Override
+    public void exec(CommandSender sender, Command command, String label, String[] args) throws FailedCommandException {
+        assertPlayer();
+        Player player = (Player) sender;
 
-		Player playerToAdd = Bukkit.getPlayer(args[2]);
-		OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args[2]);
+        if (args.length < 3) {
+            printHelp(CommandType.PLOT);
+            return;
+        }
 
-		if (playerToAdd != null && offlinePlayer.getFirstPlayed() == 0) {
-			ChatMessage.of(VirtualRealty.getMessages().playerNotFoundWithUsername).sendWithPrefix(player);
-			return;
-		}
+        // Parse plot ID safely
+        int plotID;
+        try {
+            plotID = Integer.parseInt(args[1]);
+        } catch (Exception ex) {
+            ChatMessage.of(VirtualRealty.getMessages().useNaturalNumbersOnly).sendWithPrefix(player);
+            return;
+        }
 
-		UUID toAdd = offlinePlayer.getUniqueId();
-		String name = offlinePlayer.getName();
-		if (playerToAdd != null) {
-			toAdd = playerToAdd.getUniqueId();
-			name = playerToAdd.getName();
-		}
-		Plot plot = PlotManager.getInstance().getPlot(plotID);
-		if (plot == null) {
-			ChatMessage.of(VirtualRealty.getMessages().noPlotFound).sendWithPrefix(sender);
-			return;
-		}
-		if (!plot.hasMembershipAccess(player.getUniqueId())) {
-			ChatMessage.of(VirtualRealty.getMessages().notYourPlot).sendWithPrefix(sender);
-			return;
-		}
-		PlotMember plotMember = plot.getMember(player.getUniqueId());
-		if (plotMember != null) {
-			if (!plotMember.hasManagementPermission(ManagementPermission.ADD_MEMBER)) {
-				ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(sender);
-				return;
-			}
-		} else {
-			if (!plot.getOwnedBy().equals(player.getUniqueId())) {
-				ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(sender);
-				return;
-			}
-		}
-		if (plot.getOwnedUntilDate().isBefore(LocalDateTime.now())) {
-			ChatMessage.of(VirtualRealty.getMessages().ownershipExpired).sendWithPrefix(sender);
-			return;
-		}
-		if (plot.getOwnedBy().equals(toAdd)) {
-			boolean equals = plot.getOwnedBy().equals(player.getUniqueId());
-			ChatMessage.of(
-					equals ? VirtualRealty.getMessages().cantAddYourself : VirtualRealty.getMessages().alreadyInMembers)
-					.sendWithPrefix(sender);
-			return;
-		}
-		if (plot.getMember(toAdd) != null) {
-			ChatMessage.of(VirtualRealty.getMessages().alreadyInMembers).sendWithPrefix(sender);
-			return;
-		}
-		plot.addMember(toAdd);
-		ChatMessage.of(VirtualRealty.getMessages().playerAdd.replaceAll("%player%", name)).sendWithPrefix(sender);
-	}
+        String targetArg = args[2];
 
+        // Try online first
+        Player online = Bukkit.getPlayer(targetArg);
+        UUID targetUUID;
+        String displayName;
+
+        if (online != null) {
+            // Cleanest case — real online player
+            targetUUID = online.getUniqueId();
+            displayName = online.getName();
+        } else {
+            // Offline or Floodgate, or unknown/uncached
+            OfflinePlayer offline = Bukkit.getOfflinePlayer(targetArg);
+            targetUUID = offline.getUniqueId();
+
+            if (targetUUID == null) {
+                ChatMessage.of(VirtualRealty.getMessages().playerNotFoundWithUsername).sendWithPrefix(player);
+                return;
+            }
+
+            // Resolve a SAFE display name
+            displayName = PlayerLookupUtil.getBestName(offline);
+
+            if (displayName == null || displayName.isEmpty()) {
+                // Fallback: use what the player typed, or short UUID
+                if (!targetArg.isEmpty()) {
+                    displayName = targetArg;
+                } else {
+                    displayName = targetUUID.toString().substring(0, 8);
+                }
+            }
+        }
+
+        // Fetch plot
+        Plot plot = PlotManager.getInstance().getPlot(plotID);
+        if (plot == null) {
+            ChatMessage.of(VirtualRealty.getMessages().noPlotFound).sendWithPrefix(player);
+            return;
+        }
+
+        // Access check
+        if (!plot.hasMembershipAccess(player.getUniqueId())) {
+            ChatMessage.of(VirtualRealty.getMessages().notYourPlot).sendWithPrefix(player);
+            return;
+        }
+
+        PlotMember memberSender = plot.getMember(player.getUniqueId());
+        if (memberSender != null) {
+            if (!memberSender.hasManagementPermission(ManagementPermission.ADD_MEMBER)) {
+                ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(player);
+                return;
+            }
+        } else {
+            if (!plot.getOwnedBy().equals(player.getUniqueId())) {
+                ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(player);
+                return;
+            }
+        }
+
+        // Ownership time check
+        if (plot.getOwnedUntilDate().isBefore(LocalDateTime.now())) {
+            ChatMessage.of(VirtualRealty.getMessages().ownershipExpired).sendWithPrefix(player);
+            return;
+        }
+
+        // Cannot add yourself if you're owner
+        if (plot.getOwnedBy().equals(targetUUID)) {
+            boolean equals = plot.getOwnedBy().equals(player.getUniqueId());
+            ChatMessage msg = ChatMessage.of(
+                    equals ? VirtualRealty.getMessages().cantAddYourself : VirtualRealty.getMessages().alreadyInMembers
+            );
+            msg.sendWithPrefix(player);
+            return;
+        }
+
+        // Already a member?
+        if (plot.getMember(targetUUID) != null) {
+            ChatMessage.of(VirtualRealty.getMessages().alreadyInMembers).sendWithPrefix(player);
+            return;
+        }
+
+        // Add the member
+        plot.addMember(targetUUID);
+
+        // Send safe success message
+        ChatMessage.of(
+                VirtualRealty.getMessages().playerAdd.replace("%player%", displayName)
+        ).sendWithPrefix(player);
+    }
 }
