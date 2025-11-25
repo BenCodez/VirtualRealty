@@ -2,6 +2,7 @@ package com.modnmetl.virtualrealty.commands.plot.subcommand;
 
 import java.time.LocalDateTime;
 import java.util.LinkedList;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -18,6 +19,7 @@ import com.modnmetl.virtualrealty.model.other.CommandType;
 import com.modnmetl.virtualrealty.model.permission.ManagementPermission;
 import com.modnmetl.virtualrealty.model.plot.Plot;
 import com.modnmetl.virtualrealty.model.plot.PlotMember;
+import com.modnmetl.virtualrealty.util.PlayerLookupUtil;
 
 public class KickSubCommand extends SubCommand {
 
@@ -38,11 +40,14 @@ public class KickSubCommand extends SubCommand {
     @Override
     public void exec(CommandSender sender, Command command, String label, String[] args) throws FailedCommandException {
         assertPlayer();
-        Player player = ((Player) sender);
+        Player player = (Player) sender;
+
         if (args.length < 3) {
             printHelp(CommandType.PLOT);
             return;
         }
+
+        // Parse plot ID
         int plotID;
         try {
             plotID = Integer.parseInt(args[1]);
@@ -50,48 +55,78 @@ public class KickSubCommand extends SubCommand {
             ChatMessage.of(VirtualRealty.getMessages().useNaturalNumbersOnly).sendWithPrefix(sender);
             return;
         }
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args[2]);
-        if (offlinePlayer.getName() == null) {
-            ChatMessage.of(VirtualRealty.getMessages().playerNotFoundWithUsername).sendWithPrefix(sender);
-            return;
-        }
+
+        // Resolve target player by name (works for Java + Floodgate names)
+        String targetNameArg = args[2];
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(targetNameArg);
+        UUID targetUUID = offlinePlayer.getUniqueId();
+
         Plot plot = PlotManager.getInstance().getPlot(plotID);
         if (plot == null) {
             ChatMessage.of(VirtualRealty.getMessages().noPlotFound).sendWithPrefix(sender);
             return;
         }
+
+        // Plot must be owned
+        UUID ownerId = plot.getOwnedBy();
+        if (ownerId == null) {
+            ChatMessage.of(VirtualRealty.getMessages().noPlotFound).sendWithPrefix(sender);
+            return;
+        }
+
+        // Sender must have access to this plot
         if (!plot.hasMembershipAccess(player.getUniqueId())) {
             ChatMessage.of(VirtualRealty.getMessages().notYourPlot).sendWithPrefix(sender);
             return;
         }
-        PlotMember plotMember = plot.getMember(player.getUniqueId());
-        if (plotMember != null) {
-            if (!plotMember.hasManagementPermission(ManagementPermission.KICK_MEMBER)) {
+
+        // Check management permissions (either owner or member with KICK_MEMBER)
+        PlotMember senderMember = plot.getMember(player.getUniqueId());
+        if (senderMember != null) {
+            if (!senderMember.hasManagementPermission(ManagementPermission.KICK_MEMBER)) {
                 ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(sender);
                 return;
             }
         } else {
-            if (!plot.getOwnedBy().equals(player.getUniqueId())) {
+            if (!ownerId.equals(player.getUniqueId())) {
                 ChatMessage.of(VirtualRealty.getMessages().noAccess).sendWithPrefix(sender);
                 return;
             }
         }
+
+        // Ownership expired?
         if (plot.getOwnedUntilDate().isBefore(LocalDateTime.now())) {
             ChatMessage.of(VirtualRealty.getMessages().ownershipExpired).sendWithPrefix(sender);
             return;
         }
-        if (plot.getOwnedBy().equals(offlinePlayer.getUniqueId())) {
-            boolean equals = plot.getOwnedBy().equals(player.getUniqueId());
-            ChatMessage.of(equals ? VirtualRealty.getMessages().cantKickYourself : VirtualRealty.getMessages().cantKickOwner).sendWithPrefix(sender);
+
+        // Can't kick owner (or yourself if you are the owner)
+        if (ownerId.equals(targetUUID)) {
+            boolean equals = ownerId.equals(player.getUniqueId());
+            ChatMessage.of(equals
+                    ? VirtualRealty.getMessages().cantKickYourself
+                    : VirtualRealty.getMessages().cantKickOwner).sendWithPrefix(sender);
             return;
         }
-        PlotMember member = plot.getMember(offlinePlayer.getUniqueId());
+
+        // Get member by UUID; if not present, report not found
+        PlotMember member = plot.getMember(targetUUID);
         if (member == null) {
             ChatMessage.of(VirtualRealty.getMessages().playerNotFoundWithUsername).sendWithPrefix(sender);
             return;
         }
+
+        // Remove member and send confirmation message
         plot.removeMember(member);
-        ChatMessage.of(VirtualRealty.getMessages().playerKick.replaceAll("%player%", offlinePlayer.getName())).sendWithPrefix(sender);
+
+        String displayName = PlayerLookupUtil.getBestName(offlinePlayer);
+        if (displayName == null || displayName.isEmpty()) {
+            displayName = targetNameArg;
+        }
+
+        ChatMessage.of(
+                VirtualRealty.getMessages().playerKick.replaceAll("%player%", displayName)
+        ).sendWithPrefix(sender);
     }
 
 }
