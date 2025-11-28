@@ -125,22 +125,30 @@ public class PlayerActionListener extends VirtualListener {
 						}
 
 						@Override
-						public void failed() {
-							this.getSender().getInventory().removeItem(
-									DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getValue().getItemStack());
-							this.getSender().getInventory().remove(
-									DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getValue().getItemStack());
-							this.getSender().getInventory().addItem(
-									DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getKey().getItemStack());
-							DraftListener.DRAFT_MAP.get(this.getSender()).getKey().removeGrid();
-							DraftListener.DRAFT_MAP.remove(this.getSender());
-							this.getSender()
-									.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
-							DraftListener.DRAFT_MAP.remove(this.getSender());
-							ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
-									this.getSender().getUniqueId());
-						}
+                        public void failed() {
+                            // The draft may already have been cleared (timeout, re-entering stake mode, etc.).
+                            if (!DraftListener.DRAFT_MAP.containsKey(this.getSender())) {
+                                this.getSender()
+                                        .sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
+                                ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
+                                        this.getSender().getUniqueId());
+                                return;
+                            }
 
+                            this.getSender().getInventory().removeItem(
+                                    DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getValue().getItemStack());
+                            this.getSender().getInventory().remove(
+                                    DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getValue().getItemStack());
+                            this.getSender().getInventory().addItem(
+                                    DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getKey().getItemStack());
+                            DraftListener.DRAFT_MAP.get(this.getSender()).getKey().removeGrid();
+                            DraftListener.DRAFT_MAP.remove(this.getSender());
+                            this.getSender()
+                                    .sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
+                            DraftListener.DRAFT_MAP.remove(this.getSender());
+                            ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
+                                    this.getSender().getUniqueId());
+                        }
 						@Override
 						public void expiry() {
 							ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
@@ -187,27 +195,31 @@ public class PlayerActionListener extends VirtualListener {
 						}
 
 						@Override
-						public void failed() {
-							ItemStack plotItemStack = DraftListener.DRAFT_MAP.get(this.getSender()).getValue()
-									.getValue().getItemStack();
-							for (ItemStack content : this.getSender().getInventory().getContents()) {
-								if (content == null || content.getType() == Material.AIR)
-									continue;
-								if (PlotItem.getPlotItemUuid(content).equals(PlotItem.getPlotItemUuid(plotItemStack))) {
-									this.getSender().getInventory().removeItem(content);
-								}
-							}
-							this.getSender().getInventory().addItem(
-									DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getKey().getItemStack());
-							DraftListener.DRAFT_MAP.get(this.getSender()).getKey().removeGrid();
-							DraftListener.DRAFT_MAP.remove(this.getSender());
-							this.getSender()
-									.sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
-							DraftListener.DRAFT_MAP.remove(this.getSender());
-							ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
-									this.getSender().getUniqueId());
-						}
+                        public void failed() {
+                            if (!DraftListener.DRAFT_MAP.containsKey(this.getSender())) {
+                                this.getSender()
+                                        .sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
+                                ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
+                                        this.getSender().getUniqueId());
+                                return;
+                            }
 
+                            ItemStack plotItemStack = DraftListener.DRAFT_MAP.get(this.getSender()).getValue()
+                                    .getValue().getItemStack();
+                            for (ItemStack content : this.getSender().getInventory().getContents()) {
+                                if (content == null || content.getType() == Material.AIR)
+                                    continue;
+                                if (PlotItem.getPlotItemUuid(content).equals(PlotItem.getPlotItemUuid(plotItemStack))) {
+                                    this.getSender().getInventory().removeItem(content);
+                                }
+                            }
+                            this.getSender().getInventory().addItem(
+                                    DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getKey().getItemStack());
+                            DraftListener.DRAFT_MAP.get(this.getSender()).getKey().removeGrid();
+                            DraftListener.DRAFT_MAP.remove(this.getSender());
+                            ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
+                                    this.getSender().getUniqueId());
+                        }
 						@Override
 						public void expiry() {
 							ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
@@ -324,26 +336,33 @@ public class PlayerActionListener extends VirtualListener {
 			}
 
 			@Override
-			public void failed() {
-				ItemStack plotItemStack = DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getValue()
-						.getItemStack();
-				for (ItemStack content : this.getSender().getInventory().getContents()) {
-					if (content == null || content.getType() == Material.AIR)
-						continue;
-					if (PlotItem.getPlotItemUuid(content).equals(PlotItem.getPlotItemUuid(plotItemStack))) {
-						this.getSender().getInventory().removeItem(content);
-					}
-				}
-				this.getSender().getInventory()
-						.addItem(DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getKey().getItemStack());
-				DraftListener.DRAFT_MAP.get(this.getSender()).getKey().removeGrid();
-				DraftListener.DRAFT_MAP.remove(this.getSender());
-				this.getSender().sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
-				DraftListener.DRAFT_MAP.remove(this.getSender());
-				ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
-						this.getSender().getUniqueId());
-			}
+            public void failed() {
+                if (!DraftListener.DRAFT_MAP.containsKey(this.getSender())) {
+                    this.getSender()
+                            .sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
+                    ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
+                            this.getSender().getUniqueId());
+                    return;
+                }
 
+                ItemStack plotItemStack = DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getValue()
+                        .getItemStack();
+                for (ItemStack content : this.getSender().getInventory().getContents()) {
+                    if (content == null || content.getType() == Material.AIR)
+                        continue;
+                    if (PlotItem.getPlotItemUuid(content).equals(PlotItem.getPlotItemUuid(plotItemStack))) {
+                        this.getSender().getInventory().removeItem(content);
+                    }
+                }
+                this.getSender().getInventory()
+                        .addItem(DraftListener.DRAFT_MAP.get(this.getSender()).getValue().getKey().getItemStack());
+                DraftListener.DRAFT_MAP.get(this.getSender()).getKey().removeGrid();
+                DraftListener.DRAFT_MAP.remove(this.getSender());
+                this.getSender().sendMessage(VirtualRealty.PREFIX + VirtualRealty.getMessages().stakeCancelled);
+                DraftListener.DRAFT_MAP.remove(this.getSender());
+                ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
+                        this.getSender().getUniqueId());
+            }
 			@Override
 			public void expiry() {
 				ConfirmationManager.removeStakeConfirmations(this.getConfirmationType(),
